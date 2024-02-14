@@ -6,91 +6,71 @@ We then launch the vehicle and command it to loiter at a specific location.
 
 """
 
-from __future__ import print_function
-import time
-from dronekit import connect, VehicleMode, LocationGlobalRelative
+from mavsdk import System
+import asyncio
 
-import argparse
-parser = argparse.ArgumentParser(description='Commands vehicle using vehicle.simple_goto.')
-parser.add_argument('--connect', 
-                     help="Vehicle connection target string. If not specified, SITL automatically started and used.")
 
-args = parser.parse_args()
-connection_string = args.connect
-sitl = None
+async def run():
+    # Start a connection to the vehicle
+    vehicle = System()
+    await vehicle.connect(system_address="udp://:14540")
 
-# Start SITL if no connection string specified
-if not connection_string:
-    import dronekit_sitl
-    sitl = dronekit_sitl.start_default()
-    connection_string = sitl.connection_string()
+    async def arm_and_takeoff(target_altitude):
+        print("Basic pre-arm checks")
 
-# Connect to the Vehicle
-print('Connecting to vehicle on: %s' % connection_string)
-vehicle = connect(connection_string, wait_ready=True)
+        # Don't try to arm until autopilot is ready
+        async def wait_for_armable():
+            while not await vehicle.telemetry.health_all_ok():
+                print(" Waiting for vehicle to initialise...")
+                await asyncio.sleep(1)
 
-def arm_and_takeoff(aTargetAltitude):
-    """
-    Arms vehicle and fly to aTargetAltitude.
-    """
-    print("Basic pre-arm checks")
+        await wait_for_armable()
 
-    # Don't try to arm until autopilot is ready
-    while not vehicle.is_armable:
-        print(" Waiting for vehicle to initialise...")
-        time.sleep(1)
+        print("Arming motors")
+        # Copter should arm in GUIDED mode
+        await vehicle.action.set_takeoff_altitude(target_altitude)
+        await vehicle.action.arm()
+        await vehicle.action.takeoff()
 
-    print("Arming motors")
-    # Copter should arm in GUIDED mode
-    vehicle.mode = VehicleMode("GUIDED")
-    vehicle.armed = True
+        # Confirm vehicle armed before attempting to take off
+        while not await vehicle.telemetry.armed():
+            print(" Waiting for arming...")
+            await asyncio.sleep(1)
 
-    # Confirm vehicle armed before attempting to take off
-    while not vehicle.armed:
-        print(" Waiting for arming...")
-        time.sleep(1)
+        print("Taking off!")
 
-    print("Taking off!")
-    # Take off and fly the vehicle to a specified altitude (meters)
-    vehicle.simple_takeoff(aTargetAltitude)  # Take off to target altitude
+        # Wait until the vehicle reaches a safe height before processing the goto
+        async def wait_until_altitude_reached():
+            while (await vehicle.telemetry.position()).relative_altitude_m >= target_altitude * 0.95:
+                print(" Altitude: ", (await vehicle.telemetry.position()).relative_altitude_m)
+                await asyncio.sleep(1)
 
-    # Wait until the vehicle reaches a safe height before processing the goto (otherwise the command
-    #  after Vehicle.simple_takeoff will execute immediately).
-    while True:
-        print(" Altitude: ", vehicle.location.global_relative_frame.alt)
-        #Break and return from function just below target altitude.        
-        if vehicle.location.global_relative_frame.alt>=aTargetAltitude*0.95: 
-            print("Reached target altitude")
-            break
-        time.sleep(1)
+        await wait_until_altitude_reached()
 
-arm_and_takeoff(10)
+    await arm_and_takeoff(10)
 
-print("Set default/target airspeed to 3")
-vehicle.airspeed = 3
+    print("Set default/target airspeed to 3")
+    await vehicle.action.set_maximum_speed(3)
 
-print("Going to first point for 30 seconds ...")
-point1 = LocationGlobalRelative(37.8736, -122.254, 10)
-vehicle.simple_goto(point1)
+    print("Going to first point for 30 seconds ...")
+    point1 = (37.8736, -122.254, 10)
+    await vehicle.action.goto_location(*point1)
 
-# sleep so we can see the change in map
-time.sleep(30)
+    # sleep so we can see the change in map
+    await asyncio.sleep(30)
 
-# Loiter at the current location for 30 seconds
-print("Loitering for 30 seconds ...")
-time.sleep(30)
+    # Loiter at the current location for 30 seconds
+    print("Loitering for 30 seconds ...")
+    await asyncio.sleep(30)
 
-# Return to launch
-print("Returning to Launch")
-vehicle.mode = VehicleMode("RTL")
+    # Return to launch
+    print("Returning to Launch")
+    await vehicle.action.return_to_launch()
 
-# Close vehicle object before exiting script
-print("Close vehicle object")
-vehicle.close()
+    # Close vehicle object before exiting script
+    print("Close vehicle object")
+    await vehicle.close()
 
-# Shut down simulator
-if sitl:
-    sitl.stop()
-
-print("Completed")
+if __name__ == "__main__":
+    asyncio.run(run())
 
