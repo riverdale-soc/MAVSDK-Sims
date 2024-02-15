@@ -1,5 +1,10 @@
 """
-Initiate Mission Builder and start the mission
+Author:  Dmitri Lyalikov
+Date: 2024-15-02
+Version: 0.1
+
+Initiate Mission Builder and start the mission.
+The mission is to survey a given area with a given camera FOV and a given maximum range.
 """
 
 import asyncio
