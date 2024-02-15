@@ -1,5 +1,5 @@
-# Drone-Kit-Sims
-Collection of our Drone-Kit Simulations for Experimentation
+# MAVSDK-Sims
+Collection of our MAVSDK-Python Simulations for Experimentation
 
 Based on UAV-MOBFinder Project, we need to simulate the following processes individually, then integrate them as a project:
 * [X] Connect and wait for Arming
