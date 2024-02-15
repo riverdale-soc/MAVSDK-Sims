@@ -459,8 +459,8 @@ def create_spiral_matrix(n):
 
 if __name__ == "__main__":
     # home_location, target_altitude, area, camera_fov, max_range
-    mission = Mission(home=LocationGlobal(40.919681, -73.352823, 30),
-                      TargetAltitude=30,
+    mission = Mission(LocationGlobal(40.919681, -73.352823, 30), 30, 100, 160, 150*150)
+    mission.build_mission(40.919681, -73.352823, 30,
                       Area=10*10,
                       Cam_FOV=160,
                       MAX_RANGE=150*150)

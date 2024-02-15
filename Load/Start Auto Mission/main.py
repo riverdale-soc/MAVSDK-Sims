@@ -14,11 +14,11 @@ import argparse
 
 
 class SurveyMission:
-    def __init__(self, args):
-        self.args = args
+    def __init__(self, mission_args):
+        self.args = mission_args
         vehicle = System()
 
-        self.mission = Mission(args.TargetAltitude, args.Area, args.Cam_FOV, args.MAX_RANGE)
+        self.mission = Mission(self.args.TargetAltitude, self.args.Area, self.args.Cam_FOV, self.args.MAX_RANGE)
 
     async def run(self):
         # Start a connection to the vehicle
