@@ -76,8 +76,9 @@ class Mission:
         self.physical_length = 0
         self.physical_area = 0
         self.mission_time = 0
+        self.next = 0
         # Create default survey mission at 30 meters covering 160 meters
-        self.build_mission(home.lat, home.lon, TargetAltitude, Area, Cam_FOV, MAX_RANGE)
+        # self.build_mission(home.lat, home.lon, TargetAltitude, Area, Cam_FOV, MAX_RANGE)
         print(f"Mission Plan Created...")
         print(f"Mission Length: {self.physical_length}m")
         print(f"Mission Area: {self.physical_area}m^2")
@@ -129,6 +130,14 @@ class Mission:
         for i in range(self.waypoint_count):
             desc += f"{self.waypoint_count(i)} -> {self.neighbors_for_index_with_weights(i)} \n"
         return desc
+
+    # Follow the path from the first waypoint to the last
+    def go_to_next(self):
+        if self.next < self.waypoint_count:
+            self.next += 1
+            return self.state_at(self.next)
+        else:
+            return None
 
     @lru_cache(maxsize=None)
     def get_min_path(self, start, end):
