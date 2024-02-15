@@ -53,6 +53,8 @@ Currently the following sims are tested and known to work as is:
 * Mission Import Export
 * Performance Test
 
+# Need DOCS on running simulation
+
 ### Sample goto Simulation
 ```
 root@b7327068e335:/home/dronekit-python/examples/simple_goto# python simple_goto.py
